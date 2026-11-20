@@ -1,4 +1,4 @@
-/* Voltforge — shared utilities.
+/* 10 Benches — shared utilities.
    Security-relevant helpers live here so every surface uses the same ones:
    esc() for HTML output, sanitizeName() for free text that may reach a
    generated file, and strict numeric clamping for parameters. */
@@ -82,7 +82,7 @@
   /* Filename-safe slug from a sanitized project name. */
   function slug(name) {
     var s = sanitizeName(name, 60).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    return s || 'voltforge-project';
+    return s || '10benches-project';
   }
 
   window.VFUtil = {

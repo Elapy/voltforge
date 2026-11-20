@@ -1,6 +1,6 @@
-# Voltforge — Security Posture
+# 10 Benches — Security Posture
 
-Voltforge v1 is a fully static site (plain HTML/CSS/JS, no build step, no
+10 Benches v1 is a fully static site (plain HTML/CSS/JS, no build step, no
 server, no backend). This document states what is protected, how, and —
 just as plainly — what is **not** protected yet. Dean flagged vibe-coded-site
 security failures as a launch risk; this file is the standing answer.
@@ -38,11 +38,19 @@ security failures as a launch risk; this file is the standing answer.
    comments and the build guide, where they are additionally HTML-escaped.
    Prompts are capped at 300 characters (attribute + engine constant) and
    are only ever echoed back as text.
-6. **Exports are built, not interpolated.** The .ino, .csv, .json, and
-   build-guide downloads are produced by pure builder functions from the
-   validated project object. The guide is a standalone HTML file with no
-   scripts at all; every project string inside it is escaped. CSV cells are
-   quoted per RFC 4180 rules.
+6. **Exports are built, not interpolated.** The .ino, .csv, .json,
+   build-guide, wiring-diagram (.svg), and enclosure CAD (.scad)
+   downloads are produced by pure builder functions from the validated
+   project object. The guide is a standalone HTML file with no
+   scripts at all; every project string inside it is escaped. The SVG
+   is a standalone document with no scripts; every project string in
+   it is XML-escaped. The .scad is plain OpenSCAD source assembled
+   from the project's part dimensions and validated parameters — the
+   only user text in it is the sanitized project name, in a comment.
+   CSV cells are quoted per RFC 4180 rules.
+   The simulator (`js/sim.js`) runs entirely client-side on the
+   already-validated parameter object; it takes no new user input
+   paths (its sliders/toggles write only into its own state machine).
 7. **Credit gating is enforced in the flow.** Generation costs 5 credits,
    exports 1, checked and deducted in `VFAccount.spend` before the action
    runs. Balances live in localStorage; the monthly reset refills on the

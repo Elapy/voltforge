@@ -1,13 +1,13 @@
-/* Voltforge — brand stylesheet.
-   Palette (brand kit): Forge Ink #181820 · Spark Orange #FF6B1A ·
-   Volt Yellow #FFC531 · Forge Paper #FAF6EF · Card white #FFFFFF.
+/* 10 Benches — brand stylesheet.
+   Palette (brand kit): Bench Ink #181820 · Spark Orange #FF6B1A ·
+   Spark Yellow #FFC531 · Bench Paper #FAF6EF · Card white #FFFFFF.
    Display: Space Grotesk. Body: Inter. */
 
 :root {
   --ink: #181820;
   --ink-soft: #55555f;
   --spark: #FF6B1A;
-  --volt: #FFC531;
+  --yellow: #FFC531;
   --paper: #FAF6EF;
   --card: #FFFFFF;
   --line: #e7e0d2;
@@ -150,7 +150,7 @@ section.block .lede { color: var(--ink-soft); font-size: 17px; margin: 0 0 26px;
 .teaser p { margin: 0; color: #c9c9d2; max-width: 58ch; }
 .teaser .soon {
   margin-left: auto; font-family: var(--display); font-weight: 700; font-size: 14px;
-  border: 1px solid var(--volt); color: var(--volt); border-radius: 999px; padding: 8px 16px;
+  border: 1px solid var(--yellow); color: var(--yellow); border-radius: 999px; padding: 8px 16px;
   text-transform: uppercase; letter-spacing: 0.07em;
 }
 
@@ -246,12 +246,74 @@ section.block .lede { color: var(--ink-soft); font-size: 17px; margin: 0 0 26px;
   padding: 10px 13px; font-size: 13px; color: var(--ink-soft); margin-bottom: 14px;
 }
 
+/* ---------- simulator ---------- */
+.sim-panel h3 { margin: 0 0 4px; font-size: 20px; }
+.sim-panel h4 { margin: 0 0 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+.sim-note {
+  background: var(--paper); border: 1px dashed var(--spark); border-radius: 10px;
+  padding: 10px 13px; font-size: 13.5px; color: var(--ink-soft); margin: 0 0 10px;
+}
+.sim-controls { display: flex; gap: 14px; align-items: center; margin: 12px 0 16px; flex-wrap: wrap; }
+.sim-controls label { font-size: 13.5px; font-weight: 600; }
+.sim-controls select {
+  padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px;
+  font-family: var(--body); font-size: 14px; background: #fff;
+}
+.sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.sim-input { margin-bottom: 13px; font-size: 14px; }
+.sim-input label { font-weight: 600; font-size: 13.5px; }
+.sim-input input[type="range"] { width: 100%; accent-color: var(--spark); display: block; margin: 6px 0 2px; }
+.sim-input input[type="checkbox"] { margin-right: 4px; }
+.sim-input-value { font-size: 12.5px; color: var(--ink-soft); font-weight: 700; }
+.sim-out-row { display: flex; gap: 10px; align-items: center; margin: 7px 0; font-size: 14.5px; flex-wrap: wrap; }
+.sim-out-label { color: var(--ink-soft); font-size: 13px; font-weight: 600; min-width: 118px; }
+.sim-led {
+  width: 17px; height: 17px; border-radius: 50%; background: #d9d3c3;
+  border: 1px solid var(--line); display: inline-block; flex: none;
+}
+.sim-led.on { background: var(--yellow); border-color: #d9a400; box-shadow: 0 0 12px 3px rgba(255, 197, 49, 0.65); }
+.sim-bar {
+  height: 14px; background: var(--paper); border: 1px solid var(--line);
+  border-radius: 999px; position: relative; overflow: hidden; margin: 8px 0 12px;
+}
+.sim-bar .fill { position: absolute; top: 0; bottom: 0; left: 0; background: var(--grad); }
+.sim-bar .marker { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--ink); }
+.sim-scene { border-radius: 10px; border: 1px solid var(--line); padding: 16px; min-height: 96px; margin-bottom: 12px; }
+.sim-lamp {
+  width: 28px; height: 28px; border-radius: 50%; background: #cfc9ba;
+  border: 1px solid rgba(0, 0, 0, 0.25); margin-bottom: 10px;
+}
+.sim-lamp.on { background: var(--yellow); box-shadow: 0 0 30px 10px rgba(255, 197, 49, 0.8); }
+.sim-scene-text { color: #f5f1e8; font-size: 13.5px; font-weight: 600; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }
+.sim-log {
+  font-family: var(--mono); font-size: 12px; background: var(--ink); color: #f5f1e8;
+  border-radius: 10px; padding: 10px 12px; max-height: 148px; overflow-y: auto; line-height: 1.6;
+}
+.sim-graph { width: 100%; height: 64px; background: #fff; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; }
+.sim-track {
+  height: 20px; background: var(--paper); border: 1px solid var(--line);
+  border-radius: 999px; position: relative; margin: 8px 0 12px;
+}
+.sim-zone { position: absolute; top: 0; bottom: 0; left: 0; background: rgba(179, 38, 30, 0.30); border-radius: 999px 0 0 999px; }
+.sim-obj {
+  position: absolute; top: 2px; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--ink); transform: translateX(-7px);
+}
+.sim-dial {
+  width: 132px; height: 70px; border: 1px solid var(--line); border-bottom: none;
+  border-radius: 132px 132px 0 0; background: var(--paper); position: relative; margin: 6px 0 12px;
+}
+.sim-arm {
+  position: absolute; left: 50%; bottom: 0; width: 5px; height: 56px; margin-left: -2.5px;
+  background: var(--spark); border-radius: 3px; transform-origin: 50% 100%;
+}
+
 /* ---------- responsive ---------- */
 @media (max-width: 900px) {
   .hero-grid, .showcase { grid-template-columns: 1fr; }
   .plans { grid-template-columns: repeat(2, 1fr); }
   .hero h1 { font-size: 42px; }
-  .param-grid { grid-template-columns: 1fr; }
+  .param-grid, .sim-grid { grid-template-columns: 1fr; }
   .msg { max-width: 96%; }
 }
 @media (max-width: 560px) {

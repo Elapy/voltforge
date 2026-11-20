@@ -1,4 +1,4 @@
-/* Voltforge — builder studio UI.
+/* 10 Benches — builder studio UI.
    Rendering rule: every dynamic string reaches the DOM through textContent
    or createElement — never innerHTML — so user text cannot become markup. */
 (function () {
@@ -147,7 +147,7 @@
 
     var result = E.match(text);
     if (!result.best) {
-      addMsg('bot', 'Honest answer: nothing in the current block library builds that — yet. Voltforge only generates projects it has verified blocks for, because a wrong board is dead money. Here is what I can build today; tap one, or describe something closer to it:');
+      addMsg('bot', 'Honest answer: nothing in the current block library builds that — yet. 10 Benches only generates projects it has verified blocks for, because a wrong board is dead money. Here is what I can build today; tap one, or describe something closer to it:');
       addSuggestions();
       return;
     }
@@ -262,7 +262,7 @@
       refreshCredits();
       genBtn.disabled = true;
       cost.textContent = 'Generated — ' + A.COST_GENERATE + ' credits used.';
-      addMsg('bot', 'Forged: "' + project.name + '". Working sketch, parts list, wiring map, and build steps are in the card below. Exports are ' + A.COST_EXPORT + ' credit each.');
+      addMsg('bot', 'Built: "' + project.name + '". Working sketch, parts list, wiring map, and build steps are in the card below — and the Simulate tab runs this exact build so you can watch it behave before you wire anything. Exports (including the wiring diagram and a parametric enclosure CAD file) are ' + A.COST_EXPORT + ' credit each.');
       addNode(buildProjectCard(project));
     });
 
@@ -291,12 +291,16 @@
 
     var panes = {};
     var tabs = el('div', 'project-tabs');
-    [['sketch', 'Sketch (.ino)'], ['parts', 'Parts list'], ['wiring', 'Wiring map'], ['steps', 'Build steps']].forEach(function (pair, idx) {
+    [['sketch', 'Sketch (.ino)'], ['parts', 'Parts list'], ['wiring', 'Wiring map'], ['steps', 'Build steps'], ['sim', 'Simulate']].forEach(function (pair, idx) {
       var chip = el('button', 'chip' + (idx === 0 ? ' active' : ''), pair[1]);
       chip.addEventListener('click', function () {
         tabs.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('active'); });
         chip.classList.add('active');
         Object.keys(panes).forEach(function (k) { panes[k].style.display = k === pair[0] ? '' : 'none'; });
+        if (pair[0] === 'sim' && !panes.sim._simMounted) {
+          panes.sim._simMounted = true;
+          window.VFSim.mountPanel(panes.sim, project);
+        }
       });
       tabs.appendChild(chip);
     });
@@ -316,6 +320,10 @@
     wiringPane.style.display = 'none';
     wiringPane.appendChild(tableFrom(project.wiring.map(function (r) { return [r.from, r.to, r.note]; }), ['From', 'To', 'Note']));
     panes.wiring = wiringPane;
+
+    var simPane = el('div', 'project-pane');
+    simPane.style.display = 'none';
+    panes.sim = simPane;
 
     var stepsPane = el('div', 'project-pane');
     stepsPane.style.display = 'none';
@@ -339,8 +347,10 @@
     var exports = [
       ['Download sketch (.ino)', function () { return { file: slug + '.ino', content: E.buildSketchFile(project), mime: 'text/x-arduino;charset=utf-8' }; }],
       ['Parts list (.csv)', function () { return { file: slug + '-parts.csv', content: E.buildBomCsv(project), mime: 'text/csv;charset=utf-8' }; }],
-      ['Project file (.json)', function () { return { file: slug + '.voltforge.json', content: E.buildProjectJson(project), mime: 'application/json;charset=utf-8' }; }],
-      ['Build guide (printable)', function () { return { file: slug + '-build-guide.html', content: E.buildGuideHtml(project), mime: 'text/html;charset=utf-8' }; }]
+      ['Project file (.json)', function () { return { file: slug + '.10benches.json', content: E.buildProjectJson(project), mime: 'application/json;charset=utf-8' }; }],
+      ['Build guide (printable)', function () { return { file: slug + '-build-guide.html', content: E.buildGuideHtml(project), mime: 'text/html;charset=utf-8' }; }],
+      ['Wiring diagram (.svg)', function () { return { file: slug + '-wiring.svg', content: E.buildWiringSvg(project), mime: 'image/svg+xml;charset=utf-8' }; }],
+      ['Enclosure CAD (.scad)', function () { return { file: slug + '-enclosure.scad', content: E.buildScadFile(project), mime: 'text/plain;charset=utf-8' }; }]
     ];
     exports.forEach(function (pair) {
       var btn = el('button', 'btn btn-ghost btn-small', pair[0] + ' · ' + A.COST_EXPORT + ' credit');
@@ -353,7 +363,7 @@
         var out = pair[1]();
         U.download(out.file, out.content, out.mime);
         refreshCredits();
-        status.textContent = 'Exported ' + out.file + ' — share it and it carries Voltforge with it.';
+        status.textContent = 'Exported ' + out.file + ' — share it and it carries 10 Benches with it.';
       });
       actions.appendChild(btn);
     });
@@ -420,7 +430,7 @@
     refreshAccountBar();
 
     var acct = A.current();
-    addMsg('bot', 'Describe it. Forge it.\n\nTell me the device you want — in plain words — and I will turn it into a buildable hardware project: working Arduino code, a parts list, a wiring map, and a step-by-step guide.' +
+    addMsg('bot', 'Describe it. Build it.\n\nTell me the device you want — in plain words — and I will turn it into a buildable hardware project: working Arduino code, a parts list, a wiring map, and a step-by-step guide.' +
       (acct ? '\n\nWelcome back, ' + acct.name + '. You have ' + acct.credits + ' credits this month.' : '\n\nNew here? You get 25 free credits every month — they reset on the 1st, so they are yours to spend, not save.'));
   }
 

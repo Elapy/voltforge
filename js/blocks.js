@@ -1,5 +1,5 @@
-/* Voltforge — the known-good building-block library.
-   FENCED GENERATION: every project Voltforge produces is assembled from one
+/* 10 Benches — the known-good building-block library.
+   FENCED GENERATION: every project 10 Benches produces is assembled from one
    of these hand-checked blocks plus whitelisted, validated parameters.
    User free text is NEVER injected into generated code; sketches come from
    these templates with numeric/enum parameters only.
@@ -8,11 +8,14 @@
      id, name, short, keywords[],
      params: [{key,label,type:'pin'|'apin'|'number'|'enum'|'bool',def,...}]
      libraries: [names] (beyond the Arduino core)
-     bom(p)     -> [{item, qty, note}]
-     wiring(p)  -> [{from, to, note}]
+     bom(p)     -> [{item, qty, note}] — real, named parts (model numbers)
+     wiring(p)  -> [{from, to, note}] — references the same named parts
      sketch(p)  -> string (body below the shared header the engine adds)
      steps(p)   -> [assembly step strings]
      test       -> string (how the builder checks it works)
+     cad(p)     -> {primary, parts: [{key, name, w, d, h (mm), mount, ...}]}
+                   real dimensions of the block's primary sensor/actuator,
+                   used by the engine's parametric enclosure (.scad) export
 */
 (function () {
   'use strict';
@@ -42,7 +45,7 @@
           { item: 'USB cable (A to B)', qty: 1, note: 'Powers the board and uploads code' }
         ];
         if (p.useRelay) {
-          items.push({ item: '5V relay module, 1-channel', qty: 1, note: 'Switches the lamp circuit — mains wiring is an electrician job; use it with low-voltage lamps while learning' });
+          items.push({ item: 'Relay module, 1-channel, 5V (Songle SRD-05VDC-SL-C relay)', qty: 1, note: 'Switches the lamp circuit — mains wiring is an electrician job; use it with low-voltage lamps while learning' });
         } else {
           items.push({ item: 'LED, 5mm (any color)', qty: 1, note: 'Stands in for the lamp while you test' });
           items.push({ item: 'Resistor, 220 ohm', qty: 1, note: 'Protects the LED' });
@@ -51,9 +54,9 @@
       },
       wiring: function (p) {
         var rows = [
-          { from: 'PIR sensor OUT', to: 'Arduino D' + p.sensorPin, note: 'Motion signal' },
-          { from: 'PIR sensor VCC', to: 'Arduino 5V', note: '' },
-          { from: 'PIR sensor GND', to: 'Arduino GND', note: '' }
+          { from: 'HC-SR501 PIR OUT', to: 'Arduino D' + p.sensorPin, note: 'Motion signal' },
+          { from: 'HC-SR501 PIR VCC', to: 'Arduino 5V', note: '' },
+          { from: 'HC-SR501 PIR GND', to: 'Arduino GND', note: '' }
         ];
         if (p.useRelay) {
           rows.push({ from: 'Relay module IN', to: 'Arduino D' + p.outputPin, note: 'Switch signal' });
@@ -115,7 +118,14 @@
           'Wait about 30 seconds for the PIR to settle, then wave a hand in front of it.'
         ];
       },
-      test: function (p) { return 'Wave a hand in front of the PIR: the ' + 'light turns on and the Serial Monitor prints "Motion - light ON". Stay still and it turns off after the hold time you set.'; }
+      test: function (p) { return 'Wave a hand in front of the PIR: the ' + 'light turns on and the Serial Monitor prints "Motion - light ON". Stay still and it turns off after the hold time you set.'; },
+      cad: function (p) {
+        var parts = [
+          { key: 'pir', name: 'HC-SR501 PIR motion sensor', w: 32, d: 24, h: 25, mount: 'lid', holeD: 23, note: 'Fresnel dome pokes through the lid hole' }
+        ];
+        if (p.useRelay) parts.push({ key: 'relay', name: 'Relay module (Songle SRD-05VDC-SL-C)', w: 51, d: 27, h: 19, mount: 'floor' });
+        return { primary: 'pir', parts: parts };
+      }
     },
 
     /* ------------------------------------------------ temp logger */
@@ -137,7 +147,7 @@
       bom: function (p) {
         return [
           { item: 'Arduino Uno R3 (or compatible)', qty: 1, note: 'The brain of the project' },
-          { item: p.sensorType + ' temperature & humidity sensor module', qty: 1, note: 'Module version has the resistor built in' },
+          { item: p.sensorType + ' temperature & humidity sensor module (Aosong ' + (p.sensorType === 'DHT22' ? 'AM2302' : 'DHT11') + ')', qty: 1, note: 'Module version has the resistor built in' },
           { item: 'Solderless breadboard, 400-point', qty: 1, note: '' },
           { item: 'Jumper wires (male-to-male, assorted)', qty: 1, note: '' },
           { item: 'USB cable (A to B)', qty: 1, note: 'Readings travel over USB to the Serial Monitor' }
@@ -145,9 +155,9 @@
       },
       wiring: function (p) {
         return [
-          { from: 'DHT sensor DATA (S)', to: 'Arduino D' + p.dataPin, note: 'Signal' },
-          { from: 'DHT sensor VCC (+)', to: 'Arduino 5V', note: '' },
-          { from: 'DHT sensor GND (-)', to: 'Arduino GND', note: '' }
+          { from: p.sensorType + ' sensor DATA (S)', to: 'Arduino D' + p.dataPin, note: 'Signal' },
+          { from: p.sensorType + ' sensor VCC (+)', to: 'Arduino 5V', note: '' },
+          { from: p.sensorType + ' sensor GND (-)', to: 'Arduino GND', note: '' }
         ];
       },
       sketch: function (p) {
@@ -203,7 +213,12 @@
           'Open Tools > Serial Monitor and set it to 9600 baud.'
         ];
       },
-      test: function (p) { return 'Readings appear every ' + p.intervalSeconds + ' seconds as CSV rows. Breathe gently on the sensor: humidity and temperature should climb, then settle back.'; }
+      test: function (p) { return 'Readings appear every ' + p.intervalSeconds + ' seconds as CSV rows. Breathe gently on the sensor: humidity and temperature should climb, then settle back.'; },
+      cad: function (p) {
+        return { primary: 'dht', parts: [
+          { key: 'dht', name: p.sensorType + ' sensor module (Aosong)', w: 32, d: 15, h: 10, mount: 'lid', ventW: 22, ventD: 9, note: 'Sits under lid vent slots so room air reaches it' }
+        ] };
+      }
     },
 
     /* ------------------------------------------------ plant monitor */
@@ -226,7 +241,7 @@
       bom: function (p) {
         var items = [
           { item: 'Arduino Uno R3 (or compatible)', qty: 1, note: 'The brain of the project' },
-          { item: 'Capacitive soil moisture sensor (v1.2 style)', qty: 1, note: 'Capacitive lasts far longer in soil than the fork type' },
+          { item: 'Capacitive soil moisture sensor v1.2', qty: 1, note: 'Capacitive lasts far longer in soil than the fork type; the probe goes in the pot, the electronics board stays dry' },
           { item: 'LED, 5mm', qty: 1, note: 'The "water me" light' },
           { item: 'Resistor, 220 ohm', qty: 1, note: 'Protects the LED' },
           { item: 'Active buzzer, 5V', qty: 1, note: 'Beeps when the soil is dry' },
@@ -235,16 +250,16 @@
           { item: 'USB cable (A to B)', qty: 1, note: '' }
         ];
         if (p.usePump) {
-          items.push({ item: '5V relay module, 1-channel', qty: 1, note: 'Switches the pump' });
+          items.push({ item: 'Relay module, 1-channel, 5V (Songle SRD-05VDC-SL-C relay)', qty: 1, note: 'Switches the pump' });
           items.push({ item: 'Mini submersible water pump, 3-5V, with tube', qty: 1, note: 'Power it from a separate USB supply, not the Arduino pin' });
         }
         return items;
       },
       wiring: function (p) {
         var rows = [
-          { from: 'Soil sensor AOUT', to: 'Arduino ' + p.sensorPin, note: 'Moisture signal' },
-          { from: 'Soil sensor VCC', to: 'Arduino 5V', note: '' },
-          { from: 'Soil sensor GND', to: 'Arduino GND', note: '' },
+          { from: 'Soil sensor v1.2 AOUT', to: 'Arduino ' + p.sensorPin, note: 'Moisture signal' },
+          { from: 'Soil sensor v1.2 VCC', to: 'Arduino 5V', note: '' },
+          { from: 'Soil sensor v1.2 GND', to: 'Arduino GND', note: '' },
           { from: 'Arduino D' + p.ledPin, to: '220 ohm resistor, then LED long leg (+)', note: '' },
           { from: 'LED short leg (-)', to: 'Arduino GND', note: '' },
           { from: 'Buzzer + ', to: 'Arduino D' + p.buzzerPin, note: '' },
@@ -332,7 +347,15 @@
         s.push('Push the probe into the plant pot, about halfway down the soil.');
         return s;
       },
-      test: function (p) { return 'Pull the probe out of the soil (dry air reads as very dry): the LED lights and the buzzer beeps twice each check. Push it into watered soil and the alerts stop.'; }
+      test: function (p) { return 'Pull the probe out of the soil (dry air reads as very dry): the LED lights and the buzzer beeps twice each check. Push it into watered soil and the alerts stop.'; },
+      cad: function (p) {
+        var parts = [
+          { key: 'soil', name: 'Capacitive soil sensor v1.2 — electronics head', w: 22, d: 15, h: 6, mount: 'slot', slotW: 26, slotH: 9, note: 'Probe cable exits through the front-wall slot; the probe itself lives in the plant pot' },
+          { key: 'buzzer', name: 'Active buzzer, 5V', w: 12, d: 12, h: 10, mount: 'lid', holeD: 6, note: 'Sound hole in the lid' }
+        ];
+        if (p.usePump) parts.push({ key: 'relay', name: 'Relay module (Songle SRD-05VDC-SL-C)', w: 51, d: 27, h: 19, mount: 'floor' });
+        return { primary: 'soil', parts: parts };
+      }
     },
 
     /* ------------------------------------------------ distance alarm */
@@ -434,7 +457,13 @@
           'Point the sensor at a wall and move your hand toward it slowly.'
         ];
       },
-      test: function (p) { return 'Distances print in cm. Bring your hand inside ' + p.alarmCm + ' cm: the LED lights and the buzzer sounds until you move away.'; }
+      test: function (p) { return 'Distances print in cm. Bring your hand inside ' + p.alarmCm + ' cm: the LED lights and the buzzer sounds until you move away.'; },
+      cad: function (p) {
+        return { primary: 'sr04', parts: [
+          { key: 'sr04', name: 'HC-SR04 ultrasonic sensor', w: 45, d: 20, h: 15, mount: 'front', holeD: 16, holeGap: 26, note: 'Both transducer "eyes" look through the front-wall holes' },
+          { key: 'buzzer', name: 'Active buzzer, 5V', w: 12, d: 12, h: 10, mount: 'lid', holeD: 6, note: 'Sound hole in the lid' }
+        ] };
+      }
     },
 
     /* ------------------------------------------------ sun tracker */
@@ -455,7 +484,7 @@
       bom: function (p) {
         return [
           { item: 'Arduino Uno R3 (or compatible)', qty: 1, note: 'The brain of the project' },
-          { item: 'Micro servo motor (SG90)', qty: 1, note: 'The muscle — turns the sensor head' },
+          { item: 'Micro servo motor (TowerPro SG90)', qty: 1, note: 'The muscle — turns the sensor head' },
           { item: 'Photoresistor (LDR / GL5528)', qty: 2, note: 'The two "eyes" that compare light levels' },
           { item: 'Resistor, 10k ohm', qty: 2, note: 'One per LDR, forms the voltage divider' },
           { item: 'Solderless breadboard, 400-point', qty: 1, note: '' },
@@ -466,9 +495,9 @@
       },
       wiring: function (p) {
         return [
-          { from: 'Servo signal (orange/yellow wire)', to: 'Arduino D' + p.servoPin, note: '' },
-          { from: 'Servo power (red wire)', to: 'Arduino 5V', note: 'A small SG90 is fine on USB power' },
-          { from: 'Servo ground (brown/black wire)', to: 'Arduino GND', note: '' },
+          { from: 'SG90 servo signal (orange/yellow wire)', to: 'Arduino D' + p.servoPin, note: '' },
+          { from: 'SG90 servo power (red wire)', to: 'Arduino 5V', note: 'A small SG90 is fine on USB power' },
+          { from: 'SG90 servo ground (brown/black wire)', to: 'Arduino GND', note: '' },
           { from: 'Left LDR leg 1', to: 'Arduino 5V', note: '' },
           { from: 'Left LDR leg 2', to: 'Arduino ' + p.leftPin + ' AND one end of a 10k resistor', note: 'The divider midpoint is the signal' },
           { from: 'Left 10k resistor other end', to: 'Arduino GND', note: '' },
@@ -532,7 +561,13 @@
           'If the tracker turns AWAY from the light, swap the two LDR pin numbers — every bench is mirrored differently.'
         ];
       },
-      test: function (p) { return 'Shine a phone flashlight from the left: the servo turns toward it. Move the light right and it follows. Shade one LDR with a finger and it turns that way too.'; }
+      test: function (p) { return 'Shine a phone flashlight from the left: the servo turns toward it. Move the light right and it follows. Shade one LDR with a finger and it turns that way too.'; },
+      cad: function (p) {
+        return { primary: 'servo', parts: [
+          { key: 'servo', name: 'TowerPro SG90 micro servo', w: 22.2, d: 11.8, h: 31, mount: 'top', note: 'Drops into the lid-top bracket window' },
+          { key: 'ldrpanel', name: 'GL5528 LDR pair + divider fin (rides on the servo horn)', w: 44, d: 12, h: 20, mount: 'horn', holeD: 5.2, holeGap: 24, note: 'Printed panel: two LDR holes with a shade fin between them' }
+        ] };
+      }
     },
 
     /* ------------------------------------------------ sound meter */
@@ -561,9 +596,9 @@
       },
       wiring: function (p) {
         var rows = [
-          { from: 'Mic module A0 (analog out)', to: 'Arduino ' + p.micPin, note: '' },
-          { from: 'Mic module VCC', to: 'Arduino 5V', note: '' },
-          { from: 'Mic module GND', to: 'Arduino GND', note: '' }
+          { from: 'KY-038 mic A0 (analog out)', to: 'Arduino ' + p.micPin, note: '' },
+          { from: 'KY-038 mic VCC', to: 'Arduino 5V', note: '' },
+          { from: 'KY-038 mic GND', to: 'Arduino GND', note: '' }
         ];
         for (var i = 0; i < 5; i++) {
           rows.push({ from: 'Arduino D' + (p.firstLedPin + i), to: '220 ohm resistor, then LED ' + (i + 1) + ' long leg (+)', note: i === 0 ? 'LEDs run on consecutive pins from your first pin' : '' });
@@ -618,7 +653,13 @@
           'Open Tools > Serial Plotter to see the loudness wave, or just watch the LEDs.'
         ];
       },
-      test: function (p) { return 'Quiet room: no LEDs (or the first flickers). Clap once: the bar jumps to the top. If the room noise alone lights LEDs, regenerate with a higher quiet threshold.'; }
+      test: function (p) { return 'Quiet room: no LEDs (or the first flickers). Clap once: the bar jumps to the top. If the room noise alone lights LEDs, regenerate with a higher quiet threshold.'; },
+      cad: function (p) {
+        return { primary: 'mic', parts: [
+          { key: 'mic', name: 'KY-038 sound sensor module', w: 33, d: 15, h: 13, mount: 'lid', holeD: 10, note: 'Microphone capsule listens through the lid hole' },
+          { key: 'ledbar', name: 'LED bar graph (5x 5mm LEDs)', w: 60, d: 8, h: 9, mount: 'lid', holes: 5, holeD: 5.2, holeGap: 12, note: 'The five bar-graph LEDs poke through the lid in a row' }
+        ] };
+      }
     }
   ];
 

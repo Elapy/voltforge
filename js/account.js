@@ -1,4 +1,4 @@
-/* Voltforge — demo account + credit layer (localStorage).
+/* 10 Benches — demo account + credit layer (localStorage).
    DEMO-GRADE BY DESIGN: accounts live only in this browser. There is no
    server, no real password security (passwords are obfuscated with a simple
    non-crypto hash so they are not stored as plaintext), and no real money.
