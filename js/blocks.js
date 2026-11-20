@@ -580,7 +580,7 @@
       libraries: [],
       params: [
         { key: 'micPin', label: 'Microphone analog pin', type: 'apin', def: 'A0' },
-        { key: 'firstLedPin', label: 'First LED pin (LEDs use this pin + the next 4)', type: 'pin', def: 3 },
+        { key: 'firstLedPin', label: 'First LED pin (LEDs use this pin + the next 4)', type: 'pin', def: 3, pinMax: 9, help: 'Tops out at D9 so the fifth LED still lands on a real pin (D13).' },
         { key: 'threshold', label: 'Quiet threshold (raise in a noisy room)', type: 'number', def: 25, min: 5, max: 200 }
       ],
       bom: function (p) {

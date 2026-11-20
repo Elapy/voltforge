@@ -63,7 +63,12 @@
       switch (def.type) {
         case 'pin': {
           var n = parseInt(v, 10);
-          clean[def.key] = DIGITAL_PINS.indexOf(n) !== -1 ? n : def.def;
+          var okPin = DIGITAL_PINS.indexOf(n) !== -1;
+          /* Some blocks derive further pins from this one (e.g. the sound
+             meter's LED bar uses firstLedPin..firstLedPin+4); pinMax caps
+             the start so every derived pin stays a real Uno pin. */
+          if (okPin && def.pinMax != null && n > def.pinMax) okPin = false;
+          clean[def.key] = okPin ? n : def.def;
           break;
         }
         case 'apin': {
@@ -89,6 +94,28 @@
         default:
           clean[def.key] = def.def;
       }
+    });
+    /* Pin uniqueness: two functions sharing one physical pin (a PIR sensor
+       and the light it drives both on D2, TRIG and ECHO on the same pin,
+       both LDRs on A0) produce a build that cannot work. Reassign any
+       duplicate — within its own pin family — to its declared default, or
+       to the first free pin when the default is also taken. */
+    var usedByType = { pin: {}, apin: {} };
+    block.params.forEach(function (def) {
+      if (def.type !== 'pin' && def.type !== 'apin') return;
+      var used = usedByType[def.type];
+      var set = def.type === 'pin' ? DIGITAL_PINS : ANALOG_PINS;
+      var v = clean[def.key];
+      if (used[v]) {
+        var cand = !used[def.def] ? def.def : null;
+        if (cand === null) {
+          for (var i = 0; i < set.length; i++) {
+            if (!used[set[i]]) { cand = set[i]; break; }
+          }
+        }
+        if (cand !== null) { clean[def.key] = cand; v = cand; }
+      }
+      used[v] = true;
     });
     return clean;
   }
@@ -146,6 +173,10 @@
 
   function csvCell(value) {
     var s = String(value == null ? '' : value);
+    /* Spreadsheet formula injection: a cell whose text starts with =, +, -
+       or @ (after optional whitespace) is executed as a formula by Excel /
+       Sheets on import. Neutralize with a leading apostrophe. */
+    if (/^\s*[=+\-@]/.test(s)) s = "'" + s;
     if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
     return s;
   }

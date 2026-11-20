@@ -28,6 +28,9 @@
   function sanitizeName(value, maxLen) {
     var s = String(value == null ? '' : value);
     s = s.replace(/[\u0000-\u001F\u007F]/g, ' ');
+    /* Strip zero-width / bidi / format controls: they are invisible in the
+       UI and exports and can visually spoof a name (e.g. U+202E). */
+    s = s.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/g, '');
     s = s.replace(/[*\/\\<>:"|?#&;`$]/g, '');
     s = s.replace(/\s+/g, ' ').trim();
     if (maxLen && s.length > maxLen) s = s.slice(0, maxLen).trim();

@@ -173,6 +173,9 @@
     if (def.type === 'pin' || def.type === 'apin') {
       input = document.createElement('select');
       var opts = def.type === 'pin' ? E.DIGITAL_PINS : E.ANALOG_PINS;
+      if (def.type === 'pin' && def.pinMax != null) {
+        opts = opts.filter(function (pin) { return pin <= def.pinMax; });
+      }
       opts.forEach(function (pin) {
         var o = document.createElement('option');
         o.value = String(pin);
@@ -252,12 +255,21 @@
         raw[def.key] = def.type === 'bool' ? input.checked : input.value;
       });
       var projectName = nameInput.value;
+      /* Build BEFORE spending: if generation ever throws, the visitor
+         must not be charged for a project they never received. The
+         project is only shown after the spend succeeds. */
+      var project;
+      try {
+        project = E.generate(block, raw, projectName);
+      } catch (err) {
+        addMsg('bot', 'That build failed to assemble — no credits were used. Please try again.');
+        return;
+      }
       if (!A.spend(A.COST_GENERATE)) {
         addMsg('bot', 'You are out of credits for this month — generation needs ' + A.COST_GENERATE + '. Your pool resets on the 1st, or upgrade for a bigger pool.');
         openUpgrade();
         return;
       }
-      var project = E.generate(block, raw, projectName);
       lastProject = project;
       refreshCredits();
       genBtn.disabled = true;
@@ -355,12 +367,20 @@
     exports.forEach(function (pair) {
       var btn = el('button', 'btn btn-ghost btn-small', pair[0] + ' · ' + A.COST_EXPORT + ' credit');
       btn.addEventListener('click', function () {
+        /* Build BEFORE spending, so a builder error can never take a
+           credit for a file that was never delivered. */
+        var out;
+        try {
+          out = pair[1]();
+        } catch (err) {
+          status.textContent = 'That export failed to build — no credit was used.';
+          return;
+        }
         if (!A.spend(A.COST_EXPORT)) {
           status.textContent = 'Out of credits — exports need ' + A.COST_EXPORT + ' credit each. Pool resets on the 1st.';
           openUpgrade();
           return;
         }
-        var out = pair[1]();
         U.download(out.file, out.content, out.mime);
         refreshCredits();
         status.textContent = 'Exported ' + out.file + ' — share it and it carries 10 Benches with it.';
@@ -407,9 +427,12 @@
     authSwitchBtn.addEventListener('click', function () {
       openAuth(authMode === 'signup' ? 'signin' : 'signup');
     });
-    document.getElementById('auth-close').addEventListener('click', closeAuth);
+    document.getElementById('auth-close').addEventListener('click', function () {
+      pendingPrompt = null; /* a dismissed signup must not replay an old prompt at a later sign-in */
+      closeAuth();
+    });
     document.getElementById('upgrade-close').addEventListener('click', closeUpgrade);
-    authModal.addEventListener('click', function (e) { if (e.target === authModal) closeAuth(); });
+    authModal.addEventListener('click', function (e) { if (e.target === authModal) { pendingPrompt = null; closeAuth(); } });
     upgradeModal.addEventListener('click', function (e) { if (e.target === upgradeModal) closeUpgrade(); });
 
     chatForm.addEventListener('submit', function (ev) {

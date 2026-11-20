@@ -233,6 +233,52 @@ function topUp(win, credits) {
   A2.signout();
   check('account: signout clears session', A2.current() === null);
 
+  /* ================= QA audit fixes (2026-11-20) ================= */
+  // duplicate physical pins are reassigned to distinct, valid pins
+  const dupMotion = E.validateParams(motion, { sensorPin: 2, outputPin: 2 });
+  check('fix: duplicate pin reassigned (motion sensor vs output)', dupMotion.sensorPin !== dupMotion.outputPin && E.DIGITAL_PINS.includes(dupMotion.outputPin));
+  const dupDist = E.validateParams(E.blockById('distance-alarm'), { trigPin: 9, echoPin: 9 });
+  check('fix: duplicate pin reassigned (TRIG vs ECHO)', dupDist.trigPin !== dupDist.echoPin);
+  const dupPlant = E.validateParams(E.blockById('plant-monitor'), { ledPin: 8, buzzerPin: 8, pumpPin: 8 });
+  check('fix: duplicate pins reassigned (LED/buzzer/pump all distinct)', new Set([dupPlant.ledPin, dupPlant.buzzerPin, dupPlant.pumpPin]).size === 3);
+  const dupSun = E.validateParams(E.blockById('sun-tracker'), { leftPin: 'A0', rightPin: 'A0' });
+  check('fix: duplicate analog pin reassigned (left vs right LDR)', dupSun.leftPin !== dupSun.rightPin);
+  // sound meter: first LED pin is capped so first+4 stays a real Uno pin
+  const soundCap = E.validateParams(E.blockById('sound-meter'), { firstLedPin: 13 });
+  check('fix: sound-meter first LED pin capped (13 -> default 3)', soundCap.firstLedPin === 3);
+  const soundProj2 = E.generate(E.blockById('sound-meter'), { firstLedPin: 13 }, 'Cap Test');
+  check('fix: sound-meter wiring never names D14-D17', !/D1[4-9]/.test(soundProj2.wiring.map(r => r.from + ' ' + r.to).join(' ')));
+  const soundOk = E.validateParams(E.blockById('sound-meter'), { firstLedPin: 9 });
+  check('fix: sound-meter first LED pin D9 still allowed (bar ends at D13)', soundOk.firstLedPin === 9);
+  // sanitizer strips invisible bidi/format controls
+  check('fix: sanitizeName strips bidi override (U+202E)', !/[\u202E]/.test(win.VFUtil.sanitizeName('evil\u202Ename', 60)));
+  // CSV formula injection neutralized at the cell builder
+  const formulaCsv = E.buildBomCsv({ name: 'T', bom: [{ item: '=2+5', qty: 1, note: '@SUM(1)' }, { item: '+cmd', qty: 1, note: '-2+5' }] });
+  check('fix: CSV formula cells neutralized', formulaCsv.includes("'=2+5") && formulaCsv.includes("'@SUM(1)") && formulaCsv.includes("'+cmd") && formulaCsv.includes("'-2+5") && !/\n=/.test(formulaCsv));
+  // account layer: invalid spends rejected, corrupted storage degrades
+  const A3win = makeWindow(); await sleep(60);
+  const A3 = A3win.win.VFAccount;
+  A3.signup('Robust', 'robust@example.com', 'hunter2x');
+  check('fix: spend(-5) rejected, balance unchanged', !A3.spend(-5) && A3.balance() === 25);
+  check('fix: spend(NaN) rejected, balance unchanged', !A3.spend(NaN) && A3.balance() === 25);
+  check('fix: spend(0) rejected', !A3.spend(0) && A3.balance() === 25);
+  const store3 = JSON.parse(A3win.win.localStorage.getItem('vf_accounts_v1'));
+  store3['robust@example.com'] = 'junk-entry';
+  A3win.win.localStorage.setItem('vf_accounts_v1', JSON.stringify(store3));
+  let junkThrew = false, junkCurrent = 'unset';
+  try { junkCurrent = A3.current(); } catch (e) { junkThrew = true; }
+  check('fix: non-object account entry degrades to signed-out, no throw', !junkThrew && junkCurrent === null);
+  const A4win = makeWindow(); await sleep(60);
+  const A4 = A4win.win.VFAccount;
+  A4.signup('Plan', 'plan@example.com', 'hunter2x');
+  const store4 = JSON.parse(A4win.win.localStorage.getItem('vf_accounts_v1'));
+  store4['plan@example.com'].plan = 'pro-max'; store4['plan@example.com'].month = '2020-01'; store4['plan@example.com'].credits = 'lots';
+  A4win.win.localStorage.setItem('vf_accounts_v1', JSON.stringify(store4));
+  let planThrew = false, planAcct = null;
+  try { planAcct = A4.current(); } catch (e) { planThrew = true; }
+  check('fix: unknown plan + bad credits repaired to Free refill, no throw', !planThrew && !!planAcct && planAcct.plan === 'free' && planAcct.credits === 25);
+  A3win.dom.window.close(); A4win.dom.window.close();
+
   /* ================= simulator logic cores ================= */
   // motion light: hold logic follows the user's holdSeconds
   const simM = S.create('motion-light', { sensorPin: 2, outputPin: 8, holdSeconds: 10, useRelay: false });

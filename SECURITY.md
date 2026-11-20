@@ -47,7 +47,12 @@ security failures as a launch risk; this file is the standing answer.
    it is XML-escaped. The .scad is plain OpenSCAD source assembled
    from the project's part dimensions and validated parameters — the
    only user text in it is the sanitized project name, in a comment.
-   CSV cells are quoted per RFC 4180 rules.
+   CSV cells are quoted per RFC 4180 rules, and any cell whose text
+   would read as a spreadsheet formula (leading `=`, `+`, `-` or `@`)
+   is neutralized with a leading apostrophe. Validated parameters can
+   never assign two functions to the same physical pin, and a pin that
+   derives further pins (the sound meter's LED bar) is capped so every
+   derived pin is a real Uno pin.
    The simulator (`js/sim.js`) runs entirely client-side on the
    already-validated parameter object; it takes no new user input
    paths (its sliders/toggles write only into its own state machine).

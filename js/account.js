@@ -26,7 +26,7 @@
     try {
       var raw = localStorage.getItem(ACCOUNTS_KEY);
       var parsed = raw ? JSON.parse(raw) : {};
-      return parsed && typeof parsed === 'object' ? parsed : {};
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
     } catch (e) {
       return {};
     }
@@ -48,13 +48,23 @@
      month, the pool refills to the plan's monthly credits. This is the
      core of the model — a resetting allowance, never a draining bucket. */
   function ensureMonthReset(acct) {
+    if (!acct || typeof acct !== 'object') return false;
+    var changed = false;
+    /* Corrupted or hand-edited storage must degrade, never crash the
+       builder: an unknown plan falls back to Free and a non-numeric or
+       negative balance is repaired instead of throwing / displaying
+       "null credits". */
+    if (!PLANS[acct.plan]) { acct.plan = 'free'; changed = true; }
+    if (typeof acct.credits !== 'number' || !isFinite(acct.credits)) { acct.credits = 0; changed = true; }
+    if (acct.credits < 0) { acct.credits = 0; changed = true; }
+    acct.credits = Math.floor(acct.credits);
     var now = window.VFUtil.monthKey();
     if (acct.month !== now) {
       acct.credits = PLANS[acct.plan].credits;
       acct.month = now;
       return true;
     }
-    return false;
+    return changed;
   }
 
   function persist(acct) {
@@ -112,7 +122,7 @@
     if (!email) return null;
     var accounts = loadAccounts();
     var acct = accounts[email];
-    if (!acct) return null;
+    if (!acct || typeof acct !== 'object' || Array.isArray(acct)) return null;
     if (ensureMonthReset(acct)) persist(acct);
     return acct;
   }
@@ -120,6 +130,10 @@
   /* Spend credits. Returns true and persists on success; false if the
      balance cannot cover it (caller shows the upgrade prompt). */
   function spend(n) {
+    n = Number(n);
+    /* A non-positive or non-finite "spend" must never mint credits or
+       corrupt the balance (spend(-5) added 5; spend(NaN) stored null). */
+    if (!isFinite(n) || n <= 0) return false;
     var acct = current();
     if (!acct) return false;
     if (acct.credits < n) return false;
