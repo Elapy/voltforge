@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Voltforge — describe a device in plain words, get a buildable Arduino project: working sketch, parts list, wiring map, and build guide. Describe it. Forge it.">
+<title>Voltforge — Describe it. Forge it.</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand-link" href="index.html" aria-label="Voltforge home">
+      <img class="logo-lockup" src="assets/logo.webp" alt="Voltforge">
+    </a>
+    <nav class="main-nav">
+      <a href="#sample">Sample</a>
+      <a href="#pricing">Pricing</a>
+      <a class="btn btn-primary btn-small" href="builder.html">Open the builder</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- ============ HERO ============ -->
+  <div class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <h1>Describe it.<br><span class="grad-text">Forge it.</span></h1>
+        <p class="promise">Tell Voltforge the device you want — in plain words — and get a complete, buildable hardware project back: working Arduino code, a parts list, a wiring map, and a step-by-step guide.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="builder.html">Start building — it's free</a>
+          <a class="btn btn-ghost" href="#sample">See a real project</a>
+        </div>
+        <p class="fineprint">Free tier: 25 credits every month, resetting on the 1st. No card, no per-token charges, ever.</p>
+      </div>
+
+      <div class="demo-card" aria-label="Example generation">
+        <div class="demo-label">You say</div>
+        <div class="prompt-bubble">"A light that turns on when someone walks into the room"</div>
+        <div class="demo-arrow">&#8595;</div>
+        <div class="demo-label">Voltforge forges</div>
+        <div class="demo-result">
+          <h3>Hallway Motion Light</h3>
+          <p class="sub">Motion-Activated Light block · Arduino Uno · no extra libraries</p>
+          <pre>const int PIR_PIN = 2;
+const int OUT_PIN = 8;
+const unsigned long HOLD_MS = 30000UL;
+
+void loop() {
+  if (digitalRead(PIR_PIN) == HIGH) {
+    lastMotion = millis();
+    if (!lightOn) {
+      digitalWrite(OUT_PIN, HIGH);
+      lightOn = true;
+    }
+  }
+  // …full sketch in the builder
+}</pre>
+          <div class="chip-row">
+            <span class="chip hot">Sketch (.ino)</span>
+            <span class="chip">Parts list</span>
+            <span class="chip">Wiring map</span>
+            <span class="chip">Build guide</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SAMPLE SHOWCASE ============ -->
+  <section class="block" id="sample">
+    <div class="wrap">
+      <h2>Forged from one sentence</h2>
+      <p class="lede">This is a real Voltforge output — the exact project the prompt above generates, not a mockup. Parts, wiring, and code, ready to build.</p>
+      <div class="showcase">
+        <div>
+          <h3>Hallway Motion Light — what you need</h3>
+          <table>
+            <tr><th>Part</th><th>Qty</th></tr>
+            <tr><td>Arduino Uno R3 (or compatible)</td><td>1</td></tr>
+            <tr><td>PIR motion sensor module (HC-SR501)</td><td>1</td></tr>
+            <tr><td>LED, 5mm (any color)</td><td>1</td></tr>
+            <tr><td>Resistor, 220 ohm</td><td>1</td></tr>
+            <tr><td>Solderless breadboard, 400-point</td><td>1</td></tr>
+            <tr><td>Jumper wires (male-to-male, assorted)</td><td>1 pack</td></tr>
+            <tr><td>USB cable (A to B)</td><td>1</td></tr>
+          </table>
+          <h3 style="margin-top:22px">How it wires up</h3>
+          <table>
+            <tr><th>From</th><th>To</th></tr>
+            <tr><td>PIR sensor OUT</td><td>Arduino D2</td></tr>
+            <tr><td>PIR sensor VCC / GND</td><td>Arduino 5V / GND</td></tr>
+            <tr><td>Arduino D8</td><td>220 ohm resistor, then LED long leg (+)</td></tr>
+            <tr><td>LED short leg (-)</td><td>Arduino GND</td></tr>
+          </table>
+          <p style="margin-top:18px"><a class="btn btn-dark btn-small" href="builder.html">Forge this project — 5 credits</a></p>
+        </div>
+        <div>
+          <h3>The sketch you download</h3>
+          <pre>/*
+ * Hallway Motion Light
+ * Generated by Voltforge (tryvoltforge.com)
+ * Board: Arduino Uno R3
+ */
+
+const int PIR_PIN = 2;
+const int OUT_PIN = 8;
+const unsigned long HOLD_MS = 30000UL; // 30 seconds
+
+unsigned long lastMotion = 0;
+bool lightOn = false;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(PIR_PIN, INPUT);
+  pinMode(OUT_PIN, OUTPUT);
+  digitalWrite(OUT_PIN, LOW);
+}
+
+void loop() {
+  if (digitalRead(PIR_PIN) == HIGH) {
+    lastMotion = millis();
+    if (!lightOn) {
+      digitalWrite(OUT_PIN, HIGH);
+      lightOn = true;
+      Serial.println("Motion - light ON");
+    }
+  }
+  if (lightOn &amp;&amp; (millis() - lastMotion &gt; HOLD_MS)) {
+    digitalWrite(OUT_PIN, LOW);
+    lightOn = false;
+    Serial.println("Quiet - light OFF");
+  }
+}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRICING ============ -->
+  <section class="block" id="pricing">
+    <div class="wrap">
+      <h2>One promise, one simple model</h2>
+      <p class="lede">A monthly pool of credits that <strong>resets on the 1st</strong> — an allowance, not a bucket that runs dry. A generation is 5 credits; each export is 1. No per-token charges, no surprise meters.</p>
+      <div class="plans">
+        <div class="plan">
+          <div class="pname">Free</div>
+          <div class="price">$0</div>
+          <div class="credits">25 credits / month</div>
+          <p>Enough to forge a project a week and take the files home. Resets monthly, forever free.</p>
+          <a class="btn btn-ghost" href="builder.html">Start free</a>
+        </div>
+        <div class="plan">
+          <div class="pname">Starter</div>
+          <div class="price">$16<span> / month</span></div>
+          <div class="credits">150 credits / month</div>
+          <p>For a hobby bench that never sits idle — a new build every weekend, exports included.</p>
+          <a class="btn btn-ghost" href="builder.html">Start free</a>
+        </div>
+        <div class="plan featured">
+          <span class="badge">Most popular</span>
+          <div class="pname">Builder</div>
+          <div class="price">$40<span> / month</span></div>
+          <div class="credits">400 credits / month</div>
+          <p>For classrooms, clubs, and serious makers running several projects at once.</p>
+          <a class="btn btn-primary" href="builder.html">Start free</a>
+        </div>
+        <div class="plan">
+          <div class="pname">Pro</div>
+          <div class="price">$80<span> / month</span></div>
+          <div class="credits">1,000 credits / month</div>
+          <p>For prototyping shops that forge daily and export everything, every time.</p>
+          <a class="btn btn-ghost" href="builder.html">Start free</a>
+        </div>
+      </div>
+      <p class="pricing-note">Paid plans launch soon — the Free tier is live now, and checkout will never ask for card details anywhere but a real payment page.</p>
+    </div>
+  </section>
+
+  <!-- ============ MAKE IT REAL TEASER ============ -->
+  <section class="block" style="padding-top:6px">
+    <div class="wrap">
+      <div class="teaser">
+        <div>
+          <h2>Make it real</h2>
+          <p>Soon: one click from a forged project to the physical thing — the full parts kit in a box, or your design as a fabricated board, shipped to your door.</p>
+        </div>
+        <span class="soon">Coming soon</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <img class="logo-icon" src="assets/icon-256.png" alt="">
+    <span><strong>Voltforge</strong> — Describe it. Forge it. · tryvoltforge.com</span>
+    <p class="small">Every Voltforge project is assembled from a verified building block — if a request matches nothing buildable, we say so instead of faking a design. Demo accounts live only in your browser; see SECURITY.md in the repo for the honest details.</p>
+  </div>
+</footer>
+
+</body>
+</html>
